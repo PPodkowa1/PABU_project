@@ -16,5 +16,7 @@ Pawel Podkowa1,3, Benedict G. Hogan2, Mary Caswell Stoddard2, Geoffrey E. Hil
 This dataset contains four scripts located in the 'src' folder, each providing a step-by-step analysis of spectral data obtained from plumage measurements using spectrophotometry techniques. All scripts were created by BGH. The raw spectral data is included in the 'specs.PABU.zip' file. The original file names include information about the individual populations; however, for further analysis, the MIDD and WEST groups are merged into a single population.
 
 
-#### Before you start the analysis make sure to change the working folder path in every load() function to set the proper Working Directory. 
+Note: Before beginning the analysis, ensure that the working folder path is updated in each load() function to set the appropriate Working Directory.
+
+
 
