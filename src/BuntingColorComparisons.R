@@ -221,7 +221,7 @@ ptab <- perm_comp %>%
   )
 ptab
 
-gtsave(ptab, paste0('../out/ptable', '_weber', useweber, '_aweber', useweber.achro, '_n', paste0(usen, collapse = ''), '_nomidd.docx'))
+gtsave(ptab, paste0('../out/ptable', '_weber', useweber, '_aweber', useweber.achro, '_n', paste0(usen, collapse = ''), '.docx'))
 # gtsave(ptab, '../out/ptable.png')
 
 ########## See if perceptual differences are large
@@ -304,7 +304,9 @@ plo <- bootres %>%
   ph <- 4
 }
 
-ggsave(paste0('../out/weighted_color_contrasts', '_weber', useweber, '_aweber', useweber.achro, '_n', paste0(usen, collapse = ''), '_nomidd.png'), plot = plo, width = pw, height = ph, scale = 1.1)
+ggsave(paste0('../out/weighted_color_contrasts', '_weber', useweber, '_aweber', useweber.achro, '_n', 
+              paste0(usen, collapse = ''), '.png'), plot = plo, width = pw, height = ph, scale = 1.1)
+
 # So, for weighted color (dS) contrast, we're
 # thinking that those nape results don't confer percepually different color
 # only reflects different variance between groups. 
@@ -312,3 +314,61 @@ ggsave(paste0('../out/weighted_color_contrasts', '_weber', useweber, '_aweber', 
 # tidy up a bit
 rm(plo)
 rm(ptab)
+
+### A reviewer wonders whether color contrasts within group indicate perceptible differences;
+# Is there enough variation to say that these ornaments can be used to discriminate between males?
+# Why don't we plot the distances within and between groups of buntings per patch. If we see
+# many values above threshold contrast, we expect that the individuals would be discriminable.
+# This will also allow us to visualise the magnitude of within and between group variation.
+# Since we saw that variation doesn't well predict group (or vice versa), our prediction might 
+# be that within group variation is greater or equal to between group variation.
+
+# gather dS and dL values for all patches into long format
+distance_array <- bind_rows(deltaS, .id = "id") %>%
+  rename(Var1 = patch1, Var2 = patch2) %>%
+  pivot_longer(cols = c(dS, dL), names_to = 'distance_type') %>%
+  mutate(group1 = str_extract(Var1, '(?<=[:punct:])[A-z]*(?=[:punct:])')) %>%
+  mutate(group2 = str_extract(Var2, '(?<=[:punct:])[A-z]*(?=[:punct:])')) %>%
+  mutate(Group = if_else(group1 == 'EAST' & group2 == 'EAST', 'EAST', NA)) %>%
+  mutate(Group = if_else(group1 == 'WEST' & group2 == 'WEST', 'WEST', Group)) %>%
+  mutate(Group = if_else(is.na(Group), 'EAST V WEST', Group)) %>%
+  select(-c(group1, group2)) %>%
+  filter(!is.na(Group))
+
+# one could plot all values in the distance array, but that may be a little misleading as it will
+# include pseudo-replication (each sample will be represented several many times). A fairer way
+# to represent this might be to take some n number of samples (potentially somewhat systematically).
+set.seed(111)
+
+# unsystematic sample, here we just take 40 random comparisons per group
+sub_distance_array <- distance_array %>% 
+  mutate(id = factor(id, levels = c('Upper breast', 'Belly', 'Rump', 'Coverts', 'Mantle', 'Nape'))) %>%
+  mutate(distance_type = factor(distance_type, levels = c('dS', 'dL'))) %>%
+  group_by(Group, distance_type, id) %>%
+  arrange(sample(1:n()), .by_group = TRUE) %>% # randomize the order
+  slice_sample(n = 40) # unsystematic sample for now, 40 approximately the lowest sample size of 38
+
+# plot the contrasts by grouping (within east, within west, and between east and west)
+plo2 <- sub_distance_array %>% 
+  ggplot(aes(x = id, y = value, group = id, color = distance_type)) +
+  geom_jitter(alpha = 1, width = 0.25, show.legend = F) + # not affected by seed, so plot not 100% reliable
+  ylab('Color (dS) and brightness (dL) contrast') +
+  geom_boxplot(color = 'black', show.legend = FALSE,  outlier.shape = NA,  alpha = 0) +
+  # geom_violin(color = 'black', show.legend = FALSE, alpha = 0) +
+  facet_wrap(vars(distance_type, Group)) + 
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 12),
+        panel.background = element_blank(),
+        axis.title.x = element_blank()) +
+  geom_hline(yintercept = 1, linetype = 'dashed', alpha = 0.5, linewidth = 1)
+
+# We can see that there is considerable variation within both east and west, and that the 
+# magnitude of variation between groups is comparable; hence no/little signal of dS or dL
+# in the analyses above. That is to say birds are variable, but (as we know from prior analysis) 
+# this variability does not well predict location of origin.
+
+# save that plot out
+pw = 4
+ph = 4
+ggsave(paste0('../out/within_between_contrasts', '_weber', useweber, '_aweber', useweber.achro, '_n', 
+              paste0(usen, collapse = ''), '.png'), plot = plo2, width = pw, height = ph, scale = 2)

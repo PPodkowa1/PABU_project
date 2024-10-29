@@ -8,7 +8,7 @@
 ##
 ## ---------------------------
 ##
-## Notes: This script loads raw spectral data collected by Pawel Podkowa, and results in ./processed_spec.RDS,
+## Notes: This script loads raw spectral data collected by Pawel, and results in ./processed_spec.RDS,
 ## 	which stores the spectra, some extracted details about each spectrum (specimen, population), and human RGB
 ##  colors for each spectrum for plotting
 ## 
